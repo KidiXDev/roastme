@@ -11,6 +11,8 @@ const CustomCursor: React.FC = () => {
   const mouseYRef = useRef(0);
   const ringXRef = useRef(0);
   const ringYRef = useRef(0);
+  const isHoveringRef = useRef(false);
+  const lastTargetRef = useRef<EventTarget | null>(null);
 
   const activeColor = ROAST_COLORS[currentLevel].color;
 
@@ -28,30 +30,34 @@ const CustomCursor: React.FC = () => {
         ringYRef.current = e.clientY;
       }
 
-      const normX = (e.clientX / window.innerWidth) * 2 - 1;
-      const normY = (e.clientY / window.innerHeight) * 2 - 1;
+      // Optimize hover detection by checking if target changed
+      if (e.target !== lastTargetRef.current) {
+        lastTargetRef.current = e.target;
+        const target = e.target as HTMLElement;
+        const isHoverable = !!target.closest(
+          'button, a, input, [role="button"]'
+        );
 
-      // Update CSS variables for performance (no re-renders)
-      document.documentElement.style.setProperty('--mouse-x', normX.toString());
-      document.documentElement.style.setProperty('--mouse-y', normY.toString());
-
-      if (dot) {
-        dot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`;
-      }
-
-      const target = e.target as HTMLElement;
-      const isHoverable = target.closest('button, a, input, [role="button"]');
-
-      if (isHoverable) {
-        dot?.classList.add('hovering');
-        ring?.classList.add('hovering');
-      } else {
-        dot?.classList.remove('hovering');
-        ring?.classList.remove('hovering');
+        if (isHoverable !== isHoveringRef.current) {
+          isHoveringRef.current = isHoverable;
+          if (isHoverable) {
+            dot?.classList.add('hovering');
+            ring?.classList.add('hovering');
+          } else {
+            dot?.classList.remove('hovering');
+            ring?.classList.remove('hovering');
+          }
+        }
       }
     };
 
     const animate = () => {
+      // 1. Update Dot Position
+      if (dot) {
+        dot.style.transform = `translate3d(${mouseXRef.current}px, ${mouseYRef.current}px, 0) translate(-50%, -50%)`;
+      }
+
+      // 2. Update Ring Position with Smoothing
       const dx = mouseXRef.current - ringXRef.current;
       const dy = mouseYRef.current - ringYRef.current;
 
@@ -70,6 +76,12 @@ const CustomCursor: React.FC = () => {
         ring.style.transform = `translate3d(${ringXRef.current}px, ${ringYRef.current}px, 0) translate(-50%, -50%) scale(${scale}) translate(${jitter}px, ${jitter}px)`;
         ring.style.borderColor = activeColor;
       }
+
+      // 3. Update CSS variables for Background Parallax
+      const normX = (mouseXRef.current / window.innerWidth) * 2 - 1;
+      const normY = (mouseYRef.current / window.innerHeight) * 2 - 1;
+      document.documentElement.style.setProperty('--mouse-x', normX.toFixed(3));
+      document.documentElement.style.setProperty('--mouse-y', normY.toFixed(3));
 
       requestAnimationFrame(animate);
     };

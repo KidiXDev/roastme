@@ -73,7 +73,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
             backgroundSize: '30px 30px',
             transform:
-              'rotate(-2deg) translate(calc(var(--mouse-x) * 30px), calc(var(--mouse-y) * 30px))'
+              'rotate(-2deg) translate(calc(var(--mouse-x) * 30px), calc(var(--mouse-y) * 30px))',
+            willChange: 'transform'
           }}
         ></div>
 
@@ -86,7 +87,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               opacity: intensity.opacity,
               filter: `blur(${intensity.blur})`,
               transform: `translate(calc(var(--mouse-x) * 50px), calc(var(--mouse-y) * 50px)) scale(${intensity.scale})`,
-              animation: `pulse ${intensity.speed} infinite alternate ease-in-out`
+              animation: `pulse ${intensity.speed} infinite alternate ease-in-out`,
+              willChange: 'transform'
             } as React.CSSProperties
           }
         ></div>
@@ -99,7 +101,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               opacity: intensity.opacity * 0.8,
               filter: `blur(${intensity.blur})`,
               transform: `translate(calc(var(--mouse-x) * -70px), calc(var(--mouse-y) * -70px)) scale(${intensity.scale * 1.1})`,
-              animation: `pulse ${intensity.speed} infinite alternate-reverse ease-in-out`
+              animation: `pulse ${intensity.speed} infinite alternate-reverse ease-in-out`,
+              willChange: 'transform'
             } as React.CSSProperties
           }
         ></div>
@@ -121,7 +124,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             borderColor: activeColor,
             opacity: 0.05,
             transform:
-              'translate(calc(var(--mouse-x) * -20px), calc(var(--mouse-y) * -20px))'
+              'translate(calc(var(--mouse-x) * -20px), calc(var(--mouse-y) * -20px))',
+            willChange: 'transform'
           }}
         ></div>
 
