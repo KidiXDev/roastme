@@ -1,3 +1,4 @@
+import { scrapeUrl } from '@/lib/scraper';
 import { Language, RoastLevel } from '@/types';
 import { createFireworks } from '@ai-sdk/fireworks';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
@@ -17,6 +18,10 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   try {
     const { url, level, language } = await req.json();
+
+    // 1. Try direct scraping first
+    const scrapedData = await scrapeUrl(url);
+    const hasScrapedContext = !!scrapedData;
 
     const providerType = process.env.PROVIDER_TYPE || 'openrouter';
 
@@ -39,16 +44,28 @@ export async function POST(req: Request) {
         throw new Error('OpenRouter Model is missing.');
       }
 
+      const useWebSearch = process.env.USE_WEB_SEARCH === 'true';
+      const shouldSearch = useWebSearch && !hasScrapedContext;
+
+      const plugins = shouldSearch
+        ? [
+            {
+              id: 'web' as const,
+              engine: 'exa' as const,
+              max_results: 3,
+              search_prompt: 'Find details about the website/profile at: ' + url
+            }
+          ]
+        : [];
+
       model = openrouter(process.env.OPENROUTER_MODEL, {
-        plugins: [
-          {
-            id: 'web',
-            engine: 'exa',
-            max_results: 3,
-            search_prompt: 'Find details about the website/profile at: ' + url
-          }
-        ]
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        plugins: plugins as any
       });
+    }
+
+    if (!model) {
+      throw new Error('Failed to initialize AI model');
     }
 
     const levelDescriptions = {
@@ -80,7 +97,21 @@ export async function POST(req: Request) {
       - Roast Level: ${level} (${levelDescriptions[level as RoastLevel]})
       - Language: ${languageInstruction}
       - Style: One or two high-impact, witty paragraphs.
-      - NO HALLUCINATIONS: If you absolutely cannot find any specific info about the URL, admit it in the roast (e.g., "This site is so empty it echoes").
+      - NO HALLUCINATIONS: If you absolutely cannot find any specific info about the URL, admit it in the roast.
+
+      SCRAPED CONTEXT (Use this PRIORITY if available):
+      ${
+        scrapedData
+          ? `
+        Title: ${scrapedData.title}
+        Description: ${scrapedData.description}
+        Headings: ${scrapedData.headings.join(', ')}
+        Key Content: ${scrapedData.paragraphs.join('\n')}
+        Links: ${scrapedData.links.map((l) => l.text + ' (' + l.href + ')').join(', ')}
+        Meta: ${JSON.stringify(scrapedData.meta)}
+        `
+          : 'Direct scraping failed or returned empty. Rely on web search or general knowledge.'
+      }
     `;
 
     const { output } = await generateText({
