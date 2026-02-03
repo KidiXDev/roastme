@@ -2,8 +2,7 @@ import { scrapeUrl } from '@/lib/scraper';
 import { Language, RoastLevel } from '@/types';
 import { createFireworks } from '@ai-sdk/fireworks';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { generateText, Output } from 'ai';
-import { z } from 'zod';
+import { generateText } from 'ai';
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY
@@ -112,35 +111,45 @@ export async function POST(req: Request) {
         `
           : 'Direct scraping failed or returned empty. Rely on web search or general knowledge.'
       }
+
+      RESPONSE FORMAT:
+      You EXCEPTIONAL GOAL is to return a VALID JSON string.
+      Do not include any conversational text, markdown code blocks, or explanations outside the JSON.
+      
+      The JSON object must follow this schema:
+      {
+        "summary": "A sharp 5-10 word summary/title",
+        "roastContent": "The full roast paragraph(s)",
+        "burnScore": number (between 0 and 100),
+        "sources": [
+          { "title": "Source Title", "uri": "Source URL" }
+        ]
+      }
     `;
 
-    const { output } = await generateText({
+    const { text } = await generateText({
       model,
-      prompt,
-      output: Output.object({
-        schema: z.object({
-          summary: z.string().describe('A sharp 5-10 word summary/title'),
-          roastContent: z.string().describe('The full roast paragraph(s)'),
-          burnScore: z
-            .number()
-            .min(0)
-            .max(100)
-            .describe('Burn score from 0 to 100'),
-          sources: z
-            .array(
-              z.object({
-                title: z.string().optional(),
-                uri: z.string().optional()
-              })
-            )
-            .optional()
-            .describe('List of sources used for grounding, if any')
-        })
-      })
+      prompt
     });
 
+    let jsonResponse;
+    try {
+      // Clean up potential markdown code blocks
+      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+      jsonResponse = JSON.parse(cleanText);
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', text, parseError);
+      // Fallback if parsing fails - attempt to wrap text in a valid structure
+      jsonResponse = {
+        summary: 'Roast Generation Error',
+        roastContent: text, // Return the raw text as content so the user at least sees something
+        burnScore: 0,
+        sources: []
+      };
+    }
+
     return Response.json({
-      ...output,
+      ...jsonResponse,
       roastLevel: level,
       url: url
     });

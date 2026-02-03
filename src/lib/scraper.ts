@@ -13,6 +13,8 @@ export interface ScrapedContent {
 export async function scrapeUrl(url: string): Promise<ScrapedContent | null> {
   try {
     const { data } = await axios.get(url, {
+      maxRedirects: 5,
+      validateStatus: (status) => status < 500,
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
