@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ErrorModal from '../components/error-modal';
 import Layout from '../components/layout';
 import QueryProvider from '../components/query-provider';
@@ -9,6 +9,7 @@ import RoastResultView from '../components/roast-result';
 import { ROAST_COLORS, TRANSLATIONS } from '../constants';
 import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
+import { Language, RoastLevel } from '../types';
 
 function AppContent() {
   const {
@@ -19,11 +20,20 @@ function AppContent() {
     loadingText,
     setLoadingText
   } = useRoastStore();
-  const t = TRANSLATIONS[language];
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  const displayLevel = mounted ? currentLevel : RoastLevel.NORMAL;
+  const displayLanguage = mounted ? language : Language.EN;
+  const t = TRANSLATIONS[displayLanguage];
 
   useEffect(() => {
     setLoadingText(t.loadingPhrases[0]);
-  }, [language, t.loadingPhrases, setLoadingText]);
+  }, [displayLanguage, t.loadingPhrases, setLoadingText]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -48,8 +58,8 @@ function AppContent() {
               <div
                 className="inline-block px-5 py-1.5 border-2 text-[11px] font-black tracking-[0.5em] uppercase transition-colors duration-1000 mb-4"
                 style={{
-                  borderColor: `${ROAST_COLORS[currentLevel].color}33`,
-                  color: ROAST_COLORS[currentLevel].color
+                  borderColor: `${ROAST_COLORS[displayLevel].color}33`,
+                  color: ROAST_COLORS[displayLevel].color
                 }}
               >
                 DIGITAL EGO CHECK // VER 2.5
@@ -88,16 +98,16 @@ function AppContent() {
               <div className="relative group">
                 <div
                   className="absolute inset-[-60px] blur-[80px] opacity-20 animate-pulse transition-all duration-1000"
-                  style={{ backgroundColor: ROAST_COLORS[currentLevel].color }}
+                  style={{ backgroundColor: ROAST_COLORS[displayLevel].color }}
                 ></div>
                 <div
                   className="w-48 h-48 border-8 border-white/5 animate-spin-slow"
-                  style={{ borderTopColor: ROAST_COLORS[currentLevel].color }}
+                  style={{ borderTopColor: ROAST_COLORS[displayLevel].color }}
                 ></div>
                 <div
                   className="absolute inset-6 w-36 h-36 border-4 border-white/5 animate-spin-reverse opacity-50"
                   style={{
-                    borderBottomColor: ROAST_COLORS[currentLevel].color
+                    borderBottomColor: ROAST_COLORS[displayLevel].color
                   }}
                 ></div>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -112,7 +122,7 @@ function AppContent() {
                 </p>
                 <div
                   className="h-[2px] w-16 mx-auto animate-pulse transition-colors duration-1000"
-                  style={{ backgroundColor: ROAST_COLORS[currentLevel].color }}
+                  style={{ backgroundColor: ROAST_COLORS[displayLevel].color }}
                 ></div>
               </div>
             </div>
@@ -149,7 +159,7 @@ function AppContent() {
                   <div className="relative z-10 space-y-6">
                     <h3
                       className="text-4xl font-heading font-black uppercase tracking-tighter italic transition-colors group-hover:text-white"
-                      style={{ color: ROAST_COLORS[currentLevel].color }}
+                      style={{ color: ROAST_COLORS[displayLevel].color }}
                     >
                       {step.title}
                     </h3>

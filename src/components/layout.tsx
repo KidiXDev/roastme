@@ -13,13 +13,18 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { language, setLanguage, currentLevel } = useRoastStore();
-
+  const [mounted, setMounted] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
-
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const activeColor = ROAST_COLORS[currentLevel].color;
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const displayLanguage = mounted ? language : Language.EN;
+  const displayLevel = mounted ? currentLevel : RoastLevel.NORMAL;
+  const activeColor = ROAST_COLORS[displayLevel].color;
 
   const handleLogoClick = () => {
     setLogoClicks((prev) => prev + 1);
@@ -46,7 +51,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const getIntensity = () => {
-    switch (currentLevel) {
+    switch (displayLevel) {
       case RoastLevel.PEDES:
         return { speed: '3s', blur: '150px', scale: 1.5, opacity: 0.15 };
       case RoastLevel.NORMAL:
@@ -124,7 +129,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         ></div>
 
         {/* Glitch Overlay for Pedes Level */}
-        {currentLevel === RoastLevel.PEDES && (
+        {displayLevel === RoastLevel.PEDES && (
           <div className="absolute inset-0 bg-white/1 mix-blend-overlay animate-glitch-bg pointer-events-none"></div>
         )}
       </div>
@@ -152,7 +157,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span className="text-[9px] font-mono font-bold text-gray-700 mt-2 tracking-[0.3em] hidden sm:block italic uppercase">
               System.status:{' '}
               <span style={{ color: activeColor }}>
-                {currentLevel} MODE ACTIVE
+                {displayLevel} MODE ACTIVE
               </span>
             </span>
           </div>
@@ -161,13 +166,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setLanguage(Language.EN)}
-                className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-2 ${language === Language.EN ? 'bg-white text-black' : 'text-gray-600 hover:text-white'}`}
+                className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-2 ${displayLanguage === Language.EN ? 'bg-white text-black' : 'text-gray-600 hover:text-white'}`}
               >
                 EN
               </button>
               <button
                 onClick={() => setLanguage(Language.ID)}
-                className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-2 ${language === Language.ID ? 'bg-white text-black' : 'text-gray-600 hover:text-white'}`}
+                className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-2 ${displayLanguage === Language.ID ? 'bg-white text-black' : 'text-gray-600 hover:text-white'}`}
               >
                 ID
               </button>

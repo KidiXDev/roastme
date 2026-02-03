@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Language, RoastLevel, RoastResult } from '../types';
 
 interface RoastState {
@@ -18,19 +19,30 @@ interface RoastState {
   setError: (error: string | null) => void;
 }
 
-export const useRoastStore = create<RoastState>((set) => ({
-  language: Language.EN,
-  setLanguage: (lang) => set({ language: lang }),
-  currentLevel: RoastLevel.NORMAL,
-  setCurrentLevel: (level) => set({ currentLevel: level }),
-  result: null,
-  setResult: (result) => set({ result }),
-  isLoading: false,
-  setIsLoading: (isLoading) => set({ isLoading }),
-  loadingText: '',
-  setLoadingText: (text) => set({ loadingText: text }),
-  url: '',
-  setUrl: (url) => set({ url }),
-  error: null,
-  setError: (error) => set({ error })
-}));
+export const useRoastStore = create<RoastState>()(
+  persist(
+    (set) => ({
+      language: Language.EN,
+      setLanguage: (lang) => set({ language: lang }),
+      currentLevel: RoastLevel.NORMAL,
+      setCurrentLevel: (level) => set({ currentLevel: level }),
+      result: null,
+      setResult: (result) => set({ result }),
+      isLoading: false,
+      setIsLoading: (isLoading) => set({ isLoading }),
+      loadingText: '',
+      setLoadingText: (text) => set({ loadingText: text }),
+      url: '',
+      setUrl: (url) => set({ url }),
+      error: null,
+      setError: (error) => set({ error })
+    }),
+    {
+      name: 'roast-storage',
+      partialize: (state) => ({
+        language: state.language,
+        currentLevel: state.currentLevel
+      })
+    }
+  )
+);

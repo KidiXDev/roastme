@@ -8,10 +8,15 @@ import { useRoastStore } from '../store/roast-store';
 import { RoastLevel } from '../types';
 
 const RoastForm: React.FC = () => {
-  const { currentLevel, setCurrentLevel, isLoading, url, setUrl } =
+  const { currentLevel, setCurrentLevel, isLoading, url, setUrl, language } =
     useRoastStore();
 
-  const { language } = useRoastStore();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const displayLevel = mounted ? currentLevel : RoastLevel.NORMAL;
   const { mutate: roast } = useRoast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,7 +25,7 @@ const RoastForm: React.FC = () => {
       audio.playClick();
       roast({
         url: url.trim(),
-        level: currentLevel,
+        level: displayLevel,
         language
       });
     }
@@ -86,7 +91,7 @@ const RoastForm: React.FC = () => {
         <div className="flex flex-col gap-4">
           {(Object.keys(RoastLevel) as RoastLevel[]).map((l, idx) => {
             const config = ROAST_COLORS[l];
-            const isSelected = currentLevel === l;
+            const isSelected = displayLevel === l;
             const desc = {
               [RoastLevel.SANTAI]: 'A polite nudge. Safe for HR.',
               [RoastLevel.NORMAL]: 'Witty. Likely to cause a rethink.',
