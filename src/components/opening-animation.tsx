@@ -21,8 +21,7 @@ export default function OpeningAnimation() {
       });
 
       // Initial States
-      tl.set(containerRef.current, { visibility: 'visible' })
-        .set(lineRef.current, { scaleX: 0, opacity: 0.5 })
+      tl.set(lineRef.current, { scaleX: 0, opacity: 0.5 })
         .set([textTitleRef.current, textSubtitleRef.current], {
           opacity: 0,
           y: 20
@@ -135,7 +134,7 @@ export default function OpeningAnimation() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-99999 flex flex-col items-center justify-center bg-[#050505] text-white invisible overflow-hidden"
+      className="fixed inset-0 z-99999 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       {/* Background Grid Effect */}
       <div
@@ -157,12 +156,14 @@ export default function OpeningAnimation() {
         <span
           ref={countRef}
           className="font-mono text-xl mb-2 font-bold text-white/50"
+          style={{ opacity: 0 }}
         >
           0%
         </span>
         <div
           ref={lineRef}
           className="w-full h-[2px] bg-white shadow-[0_0_20px_white] origin-center"
+          style={{ opacity: 0, transform: 'scaleX(0)' }}
         />
       </div>
 
@@ -171,13 +172,19 @@ export default function OpeningAnimation() {
         <h1
           ref={textTitleRef}
           className="font-heading text-7xl md:text-[10rem] font-black uppercase tracking-tighter leading-none"
-          style={{ willChange: 'transform, opacity, filter' }}
+          style={{
+            willChange: 'transform, opacity, filter',
+            opacity: 0,
+            transform: 'scale(2)',
+            filter: 'blur(20px)'
+          }}
         >
           ROASTME
         </h1>
         <h2
           ref={textSubtitleRef}
           className="font-heading text-xl md:text-3xl font-bold uppercase tracking-[0.5em] text-white/60 mt-4 md:mt-8"
+          style={{ opacity: 0, transform: 'translateY(20px)' }}
         >
           READY TO GET ROASTED?
         </h2>

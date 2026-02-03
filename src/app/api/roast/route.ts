@@ -144,19 +144,21 @@ export async function POST(req: Request) {
     const prompt = `
       ROAST MISSION:
       Analyze the profile/site at: ${url}
+      Your goal is to roast the PERSON or the PRODUCT behind the URL. 
+      Focus on their career choices, design aesthetics, "creative" descriptions, and overall vibe.
       
       STRICT DATA INTEGRITY PROTOCOL:
       - USE WEB SEARCH to find specific details about the URL content if it's not obvious.
-      - DO NOT INVENT or hallucinate information. You are a detective first, a roaster second.
-      - DATA HARVESTING: Search for specific page titles, meta tags, project names, and bio snippets.
-      - If the URL is for GitHub, identify at least one specific repository name or the main bio text.
-      - If the URL is for LinkedIn, identify the specific job title or the first sentence of the 'About' section.
-      - If the URL is for a Portfolio, identify the tech stack (e.g., 'Another React portfolio', 'Using Framer Motion just because').
+      - DO NOT focus on technical metadata like "og:tags" or "meta keywords" unless they are exceptionally cringe.
+      - DATA HARVESTING: Focus on Bio snippets, Job titles, Repository names, Project descriptions, and the 'Voice' of the content.
+      - If the URL is for GitHub, roast their contribution graph, pinning choices, or overly ambitious project names.
+      - If the URL is for LinkedIn, roast the "LinkedIn influencer" energy, generic buzzwords, or the "Open to Work" desperation/confidence.
+      - If the URL is for a Portfolio, roast the predictable tech stack (Next.js + Tailwind + Framer Motion triplet) and the generic "Passion for UX" lines.
       
       CONSTRAINTS:
       - Roast Level: ${level} (${levelDescriptions[level as RoastLevel]})
       - Language: ${languageInstruction}
-      - Style: One or two high-impact, witty paragraphs.
+      - Style: One or two high-impact, witty paragraphs. Focus on the 'Vibe' and 'Persona'.
       - NO HALLUCINATIONS: If you absolutely cannot find any specific info about the URL, admit it in the roast.
 
       SCRAPED CONTEXT (Use this PRIORITY if available):
@@ -166,10 +168,10 @@ export async function POST(req: Request) {
         Title: ${scrapedData.title}
         Description: ${scrapedData.description}
         Tech Stack: ${scrapedData.techStack?.join(', ') || 'Unknown'}
-        Headings: ${scrapedData.headings.join(', ')}
-        Key Content: ${scrapedData.paragraphs.join('\n')}
-        Links: ${scrapedData.links.map((l) => l.text + ' (' + l.href + ')').join(', ')}
-        Meta: ${JSON.stringify(scrapedData.meta)}
+        Main Headings: ${scrapedData.headings.join(', ')}
+        Content Snippets: ${scrapedData.paragraphs.join('\n')}
+        Links & Navigation: ${scrapedData.links.map((l) => l.text + ' (' + l.href + ')').join(', ')}
+        Technical Metadata (Secondary): ${JSON.stringify(scrapedData.meta)}
         `
           : 'Direct scraping failed or returned empty. Rely on web search or general knowledge.'
       }
