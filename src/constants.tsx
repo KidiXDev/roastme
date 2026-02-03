@@ -3,22 +3,41 @@ import { Language, RoastLevel } from './types';
 export const TRANSLATIONS = {
   [Language.EN]: {
     loadingPhrases: [
-      'Extracting personality fragments...',
-      'Bypassing corporate facades...',
-      'Analyzing commit message guilt...',
-      'Measuring the vanity metrics...',
-      "Detecting 'Passionate' overuse...",
-      'Roasting the over-engineered CSS...'
+      'Digging through your fake persona...',
+      'Smashing through that corporate BS...',
+      'Reading your cringe commit messages...',
+      'Checking how much you’re flexing...',
+      '"Passionate" count: way too high...',
+      'Cooking your over-engineered CSS...',
+      'Ego check: 100%, Skills: 0%...',
+      'Smelling that "Open to Work" panic...',
+      'Buzzword bingo in progress...',
+      'LinkedIn "influencer" detected...',
+      '"Rockstar"? More like "Groupie"...',
+      'Recruiter’s ghosting you in 3, 2, 1...',
+      'Too many emojis, chill out...',
+      '"Humbled to announce" my ass...'
     ]
   },
   [Language.ID]: {
     loadingPhrases: [
-      'Mengambil fragmen kepribadian...',
-      'Menembus topeng korporat...',
-      'Menganalisa rasa bersalah di commit...',
-      'Mengukur metrik kesombongan...',
-      "Mendeteksi kata 'Passionate' berlebih...",
-      'Me-roast CSS yang over-engineered...'
+      'Lagi ngubek-ngubek kepribadian palsu lo...',
+      'Nembus topeng korporat sok asik...',
+      'Baca commit message lo yang penuh dosa...',
+      'Ngukur seberapa gede gaya lo...',
+      'Kebanyakan kata "Passionate", mual gue...',
+      'Lagi goreng CSS lo yang ribet amat...',
+      'Rasio ego kegedean, skill pas-pasan...',
+      'Bau-bau panik "Open to Work" nih...',
+      'Lagi main bingo buzzword...',
+      '"Thought leader" LinkedIn gadungan detected...',
+      'Nyari kodingan ampas...',
+      'Simulasi di-ghosting recruiter...',
+      'Kebanyakan emoji, norak tau...',
+      '"Humbled to announce" pret lah...',
+      'Sabar cuy, dikit lagi...',
+      'Nyari nganu di kodingan lo...',
+      'Nyari celah di web lo yang berantakan...'
     ]
   }
 };

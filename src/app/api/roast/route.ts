@@ -104,6 +104,7 @@ export async function POST(req: Request) {
           ? `
         Title: ${scrapedData.title}
         Description: ${scrapedData.description}
+        Tech Stack: ${scrapedData.techStack?.join(', ') || 'Unknown'}
         Headings: ${scrapedData.headings.join(', ')}
         Key Content: ${scrapedData.paragraphs.join('\n')}
         Links: ${scrapedData.links.map((l) => l.text + ' (' + l.href + ')').join(', ')}

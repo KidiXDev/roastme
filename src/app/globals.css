@@ -17,7 +17,7 @@ body {
 }
 
 .font-heading {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-space-grotesk), sans-serif;
 }
 
 .noise {
