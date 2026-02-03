@@ -1,0 +1,20 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+      - FIREWORKS_API_KEY=${FIREWORKS_API_KEY}
+      - FIREWORKS_MODEL=${FIREWORKS_MODEL}
+      - PROVIDER_TYPE=${PROVIDER_TYPE}
+      - USE_WEB_SEARCH=${USE_WEB_SEARCH}
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
