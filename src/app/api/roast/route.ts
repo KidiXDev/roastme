@@ -1,10 +1,15 @@
 import { Language, RoastLevel } from '@/types';
+import { createFireworks } from '@ai-sdk/fireworks';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY
+});
+
+const fireworks = createFireworks({
+  apiKey: process.env.FIREWORKS_API_KEY
 });
 
 export const maxDuration = 60;
@@ -13,8 +18,37 @@ export async function POST(req: Request) {
   try {
     const { url, level, language } = await req.json();
 
-    if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error('OpenRouter API Key is missing.');
+    const providerType = process.env.PROVIDER_TYPE || 'openrouter';
+
+    let model;
+
+    if (providerType === 'fireworks') {
+      if (!process.env.FIREWORKS_API_KEY) {
+        throw new Error('Fireworks API Key is missing.');
+      }
+      if (!process.env.FIREWORKS_MODEL) {
+        throw new Error('Fireworks Model is missing.');
+      }
+      model = fireworks(process.env.FIREWORKS_MODEL);
+    } else {
+      if (!process.env.OPENROUTER_API_KEY) {
+        throw new Error('OpenRouter API Key is missing.');
+      }
+
+      if (!process.env.OPENROUTER_MODEL) {
+        throw new Error('OpenRouter Model is missing.');
+      }
+
+      model = openrouter(process.env.OPENROUTER_MODEL, {
+        plugins: [
+          {
+            id: 'web',
+            engine: 'exa',
+            max_results: 3,
+            search_prompt: 'Find details about the website/profile at: ' + url
+          }
+        ]
+      });
     }
 
     const levelDescriptions = {
@@ -35,6 +69,7 @@ export async function POST(req: Request) {
       Analyze the profile/site at: ${url}
       
       STRICT DATA INTEGRITY PROTOCOL:
+      - USE WEB SEARCH to find specific details about the URL content if it's not obvious.
       - DO NOT INVENT or hallucinate information. You are a detective first, a roaster second.
       - DATA HARVESTING: Search for specific page titles, meta tags, project names, and bio snippets.
       - If the URL is for GitHub, identify at least one specific repository name or the main bio text.
@@ -48,31 +83,33 @@ export async function POST(req: Request) {
       - NO HALLUCINATIONS: If you absolutely cannot find any specific info about the URL, admit it in the roast (e.g., "This site is so empty it echoes").
     `;
 
-    const result = await generateObject({
-      model: openrouter('google/gemini-2.5-flash-lite'),
+    const { output } = await generateText({
+      model,
       prompt,
-      schema: z.object({
-        summary: z.string().describe('A sharp 5-10 word summary/title'),
-        roastContent: z.string().describe('The full roast paragraph(s)'),
-        burnScore: z
-          .number()
-          .min(0)
-          .max(100)
-          .describe('Burn score from 0 to 100'),
-        sources: z
-          .array(
-            z.object({
-              title: z.string().optional(),
-              uri: z.string().optional()
-            })
-          )
-          .optional()
-          .describe('List of sources used for grounding, if any')
+      output: Output.object({
+        schema: z.object({
+          summary: z.string().describe('A sharp 5-10 word summary/title'),
+          roastContent: z.string().describe('The full roast paragraph(s)'),
+          burnScore: z
+            .number()
+            .min(0)
+            .max(100)
+            .describe('Burn score from 0 to 100'),
+          sources: z
+            .array(
+              z.object({
+                title: z.string().optional(),
+                uri: z.string().optional()
+              })
+            )
+            .optional()
+            .describe('List of sources used for grounding, if any')
+        })
       })
     });
 
     return Response.json({
-      ...result.object,
+      ...output,
       roastLevel: level,
       url: url
     });

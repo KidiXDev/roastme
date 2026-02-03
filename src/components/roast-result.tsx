@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Markdown from 'react-markdown';
 import { ROAST_COLORS } from '../constants';
 import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
@@ -147,12 +148,20 @@ const RoastResultView: React.FC = () => {
               <div className="absolute -left-8 top-0 text-zinc-800 font-black text-6xl select-none">
                 &ldquo;
               </div>
-              <p className="text-2xl md:text-4xl font-heading font-medium text-white leading-relaxed tracking-tight group">
-                {typedText}
+              <div className="text-2xl md:text-4xl font-heading font-medium text-white leading-relaxed tracking-tight group [&>p]:mb-4 [&>p:last-child]:mb-0">
+                <Markdown
+                  components={{
+                    strong: ({ node: _node, ...props }) => (
+                      <strong className="text-white font-black" {...props} />
+                    )
+                  }}
+                >
+                  {typedText}
+                </Markdown>
                 {!isDone && revealPhase >= 2 && (
                   <span className="inline-block w-8 h-1 bg-white animate-pulse ml-2 align-middle"></span>
                 )}
-              </p>
+              </div>
             </div>
 
             {isDone && result.sources && result.sources.length > 0 && (
