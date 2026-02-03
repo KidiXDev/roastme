@@ -12,10 +12,71 @@ const fireworks = createFireworks({
   apiKey: process.env.FIREWORKS_API_KEY
 });
 
+import redis from '@/lib/redis';
+import { cookies } from 'next/headers';
+
 export const maxDuration = 60;
+
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const RATE_LIMIT_NEW_SESSIONS_PER_IP = 5;
+const RATE_LIMIT_IP_FALLBACK = 30;
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    const cookieStore = await cookies();
+    let userId = cookieStore.get('user-id')?.value;
+    const today = new Date().toISOString().split('T')[0];
+
+    const ipKey = `ip:${ip}:${today}:count`;
+    const ipCount = await redis.incr(ipKey);
+    if (ipCount === 1) await redis.expire(ipKey, 86400); // 1 day
+
+    if (ipCount > RATE_LIMIT_IP_FALLBACK) {
+      return Response.json(
+        { error: 'Too many requests from this IP. Please try again tomorrow.' },
+        { status: 429 }
+      );
+    }
+
+    if (!userId) {
+      const ipRegistrationKey = `ip:${ip}:${today}:registrations`;
+      const registrationCount = await redis.incr(ipRegistrationKey);
+      if (registrationCount === 1) await redis.expire(ipRegistrationKey, 86400);
+
+      if (registrationCount > RATE_LIMIT_NEW_SESSIONS_PER_IP) {
+        return Response.json(
+          {
+            error:
+              'Too many new sessions from your network. Please try again later.'
+          },
+          { status: 429 }
+        );
+      }
+
+      userId = crypto.randomUUID();
+      cookieStore.set('user-id', userId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: '/'
+      });
+    }
+
+    const userKey = `user:${userId}:${today}:count`;
+    const userCount = await redis.incr(userKey);
+    if (userCount === 1) await redis.expire(userKey, 86400);
+
+    if (userCount > RATE_LIMIT_MAX_REQUESTS) {
+      return Response.json(
+        {
+          error:
+            'You have reached your daily roast limit (10/day). Come back tomorrow!'
+        },
+        { status: 429 }
+      );
+    }
+
     const { url, level, language } = await req.json();
 
     // 1. Try direct scraping first
