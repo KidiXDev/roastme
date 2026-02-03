@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
 import { ROAST_COLORS } from '../constants';
-import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
 import { RoastLevel } from '../types';
 
@@ -31,7 +30,7 @@ const RoastResultView: React.FC = () => {
       setRevealPhase(0);
       return;
     }
-    audio.playReveal();
+
     const summaryTimer = setTimeout(() => setRevealPhase(1), 400);
     const contentTimer = setTimeout(() => setRevealPhase(2), 1200);
     return () => {
@@ -47,11 +46,9 @@ const RoastResultView: React.FC = () => {
     const interval = setInterval(() => {
       setTypedText(result.roastContent.slice(0, i));
       i++;
-      if (i % 8 === 0) audio.playTick();
       if (i > result.roastContent.length) {
         clearInterval(interval);
         setIsDone(true);
-        audio.playSuccess();
       }
     }, 15);
     return () => clearInterval(interval);
@@ -60,7 +57,6 @@ const RoastResultView: React.FC = () => {
   if (!result) return null;
 
   const handleClose = () => {
-    audio.playClick();
     setResult(null);
   };
 

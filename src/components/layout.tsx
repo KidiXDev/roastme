@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from 'react';
 import { ROAST_COLORS } from '../constants';
-import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
 import { Language, RoastLevel } from '../types';
 import CustomCursor from './custom-cursor';
@@ -28,7 +27,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogoClick = () => {
     setLogoClicks((prev) => prev + 1);
-    audio.playTick();
 
     if (clickTimeoutRef.current) {
       clearTimeout(clickTimeoutRef.current);
@@ -46,7 +44,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const triggerEasterEgg = () => {
     setLogoClicks(0);
     setShowEasterEgg(true);
-    audio.playEasterEgg();
     setTimeout(() => setShowEasterEgg(false), 4000);
   };
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
 
 const ErrorModal: React.FC = () => {
@@ -27,7 +26,6 @@ const ErrorModal: React.FC = () => {
 
           <button
             onClick={() => {
-              audio.playClick();
               setError(null);
             }}
             className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all active:scale-95"

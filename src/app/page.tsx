@@ -7,7 +7,6 @@ import QueryProvider from '../components/query-provider';
 import RoastForm from '../components/roast-form';
 import RoastResultView from '../components/roast-result';
 import { ROAST_COLORS, TRANSLATIONS } from '../constants';
-import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
 import { Language, RoastLevel } from '../types';
 
@@ -42,7 +41,6 @@ function AppContent() {
       interval = setInterval(() => {
         i = (i + 1) % t.loadingPhrases.length;
         setLoadingText(t.loadingPhrases[i]);
-        audio.playTick();
       }, 2400);
     }
     return () => clearInterval(interval);

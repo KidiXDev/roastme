@@ -3,7 +3,6 @@
 import React from 'react';
 import { FireIcon, ROAST_COLORS } from '../constants';
 import { useRoast } from '../hooks/use-roast';
-import { audio } from '../services/audio';
 import { useRoastStore } from '../store/roast-store';
 import { RoastLevel } from '../types';
 
@@ -22,7 +21,6 @@ const RoastForm: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (url.trim()) {
-      audio.playClick();
       roast({
         url: url.trim(),
         level: displayLevel,
@@ -32,7 +30,6 @@ const RoastForm: React.FC = () => {
   };
 
   const handleLevelSelect = (l: RoastLevel) => {
-    audio.playTick();
     setCurrentLevel(l);
   };
 
