@@ -11,6 +11,11 @@ services:
       - FIREWORKS_MODEL=${FIREWORKS_MODEL}
       - PROVIDER_TYPE=${PROVIDER_TYPE}
       - USE_WEB_SEARCH=${USE_WEB_SEARCH}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_USERNAME=${REDIS_USERNAME}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
