@@ -158,7 +158,7 @@ export async function POST(req: Request) {
       throw new Error('Failed to initialize AI model');
     }
 
-    // --- PROMPT CHAINING START ---
+    // Prompt Chaining
 
     let analysisContext = '';
 
