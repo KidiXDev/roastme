@@ -2,37 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export function proxy(request: NextRequest) {
   const nonce = crypto.randomUUID();
-  const isDev = process.env.NODE_ENV === 'development';
-
-  // Content Security Policy
-  // Note: style-src 'unsafe-inline' is required for many CSS-in-JS libraries and GSAP
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' ${isDev ? "'unsafe-inline' 'unsafe-eval'" : `'nonce-${nonce}' 'strict-dynamic'`} https:;
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://* https://assets.aceternity.com; 
-    font-src 'self' data:;
-    connect-src 'self' https://*;
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-  `
-    .replace(/\s{2,}/g, ' ')
-    .trim();
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
-  requestHeaders.set('Content-Security-Policy', cspHeader);
 
   const response = NextResponse.next({
     request: {
       headers: requestHeaders
     }
   });
-
-  response.headers.set('Content-Security-Policy', cspHeader);
 
   // Advanced Security Headers
   response.headers.set('X-DNS-Prefetch-Control', 'on');
