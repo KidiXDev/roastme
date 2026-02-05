@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const roastSchema = z.object({
-      url: z.string().url(),
+      url: z.url(),
       level: z.enum(RoastLevel),
       language: z.enum(Language)
     });
