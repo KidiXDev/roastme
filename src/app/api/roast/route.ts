@@ -3,6 +3,7 @@ import { Language, RoastLevel } from '@/types';
 import { createFireworks } from '@ai-sdk/fireworks';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText } from 'ai';
+import { z } from 'zod';
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY
@@ -77,7 +78,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const { url, level, language } = await req.json();
+    const body = await req.json();
+    const roastSchema = z.object({
+      url: z.string().url(),
+      level: z.enum(RoastLevel),
+      language: z.enum(Language)
+    });
+
+    const parsed = roastSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid input', details: parsed.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { url, level, language } = parsed.data;
 
     const scrapedData = await scrapeUrl(url);
     const hasScrapedContext = !!scrapedData;
@@ -221,7 +238,7 @@ export async function POST(req: Request) {
       
       {
         "summary": "A punchy, 5-10 word title defining their existence",
-        "roastContent": "The main roast. 2-3 paragraphs. rich in specific details. Use HTML formatting tags like <b>, <i>, <br> if needed for emphasis.",
+        "roastContent": "The main roast. 2-3 paragraphs. rich in specific details. Do NOT use any HTML tags. Use Markdown formatting instead.",
         "burnScore": number (0-100),
         "sources": [
           { "title": "Source Name", "uri": "URL" } 
