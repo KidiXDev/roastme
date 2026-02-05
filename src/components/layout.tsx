@@ -8,9 +8,10 @@ import CustomCursor from './custom-cursor';
 
 interface LayoutProps {
   children: React.ReactNode;
+  isLoading?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, isLoading }) => {
   const { currentLevel } = useRoastStore();
   const [mounted, setMounted] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
@@ -60,7 +61,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const intensity = getIntensity();
 
   return (
-    <div className="min-h-screen relative selection:bg-white selection:text-black flex flex-col transition-colors duration-1000 overflow-x-hidden">
+    <div
+      className={`relative selection:bg-white selection:text-black flex flex-col transition-colors duration-1000 ${isLoading ? 'h-screen overflow-hidden' : 'min-h-screen overflow-x-hidden'}`}
+    >
       <CustomCursor />
       {/* Dynamic Experimental Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-[#050505]">
@@ -134,35 +137,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
       </div>
 
-      <header className="py-6 px-8 md:px-20 sticky top-0 z-30 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-          <div
-            className="flex flex-col group select-none"
-            onClick={handleLogoClick}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 flex items-center justify-center font-black text-xl transition-all duration-500"
-                style={{
-                  backgroundColor: logoClicks > 0 ? activeColor : 'white',
-                  color: logoClicks > 0 ? 'white' : 'black'
-                }}
-              >
-                R
+      {!isLoading && (
+        <header className="py-6 px-8 md:px-20 sticky top-0 z-30 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5">
+          <div className="max-w-[1800px] mx-auto flex items-center justify-between">
+            <div
+              className="flex flex-col group select-none"
+              onClick={handleLogoClick}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 flex items-center justify-center font-black text-xl transition-all duration-500"
+                  style={{
+                    backgroundColor: logoClicks > 0 ? activeColor : 'white',
+                    color: logoClicks > 0 ? 'white' : 'black'
+                  }}
+                >
+                  R
+                </div>
+                <span className="text-3xl font-heading font-black -tracking-widest uppercase">
+                  Roastme
+                </span>
               </div>
-              <span className="text-3xl font-heading font-black -tracking-widest uppercase">
-                Roastme
+              <span className="text-[9px] font-mono font-bold text-gray-700 mt-2 tracking-[0.3em] hidden sm:block italic uppercase">
+                System.status:{' '}
+                <span style={{ color: activeColor }}>
+                  {displayLevel} MODE ACTIVE
+                </span>
               </span>
             </div>
-            <span className="text-[9px] font-mono font-bold text-gray-700 mt-2 tracking-[0.3em] hidden sm:block italic uppercase">
-              System.status:{' '}
-              <span style={{ color: activeColor }}>
-                {displayLevel} MODE ACTIVE
-              </span>
-            </span>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="px-8 md:px-20 grow relative">{children}</main>
 

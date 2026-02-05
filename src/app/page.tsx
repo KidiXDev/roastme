@@ -21,6 +21,8 @@ function AppContent() {
   } = useRoastStore();
 
   const [mounted, setMounted] = useState(false);
+  const [fade, setFade] = useState(true);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
@@ -38,16 +40,32 @@ function AppContent() {
     let interval: NodeJS.Timeout;
     if (isLoading) {
       let i = 0;
+      // Reset fade state on start to ensure visibility
+      // Use setTimeout to avoid synchronous state update warning
+      const resetTimer = setTimeout(() => setFade(true), 0);
+
       interval = setInterval(() => {
-        i = (i + 1) % t.loadingPhrases.length;
-        setLoadingText(t.loadingPhrases[i]);
-      }, 2400);
+        // 1. Fade out
+        setFade(false);
+
+        // 2. Wait for fade out, then change text and fade in
+        setTimeout(() => {
+          i = (i + 1) % t.loadingPhrases.length;
+          setLoadingText(t.loadingPhrases[i]);
+          setFade(true);
+        }, 500); // Wait 500ms (matches generic transition duration)
+      }, 3000); // Total cycle time
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(resetTimer);
+      };
     }
     return () => clearInterval(interval);
   }, [isLoading, t.loadingPhrases, setLoadingText]);
 
   return (
-    <Layout>
+    <Layout isLoading={isLoading}>
       <div className="max-w-[1800px] mx-auto pt-12 md:pt-20 space-y-32 pb-16">
         {/* Massive Hero */}
         {!result && !isLoading && (
@@ -92,7 +110,7 @@ function AppContent() {
 
           {/* Extreme Loading State */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-32 space-y-16 animate-in fade-in duration-500">
+            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505] space-y-16 animate-in fade-in duration-500">
               <div className="relative group">
                 <div
                   className="absolute inset-[-60px] blur-[80px] opacity-20 animate-pulse transition-all duration-1000"
@@ -115,7 +133,13 @@ function AppContent() {
                 </div>
               </div>
               <div className="text-center space-y-8 max-w-2xl px-8">
-                <p className="text-3xl md:text-5xl font-heading font-black tracking-tighter uppercase italic h-24 flex items-center justify-center">
+                <p
+                  className={`text-3xl md:text-5xl font-heading font-black tracking-tighter uppercase italic h-24 flex items-center justify-center transition-all duration-500 ease-in-out transform ${
+                    fade
+                      ? 'opacity-100 blur-0 translate-y-0'
+                      : 'opacity-0 blur-sm translate-y-4'
+                  }`}
+                >
                   {loadingText}
                 </p>
                 <div
