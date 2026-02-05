@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
   // Note: style-src 'unsafe-inline' is required for many CSS-in-JS libraries and GSAP
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${isDev ? "'unsafe-eval'" : ''} https:;
+    script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : ''} https:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://* https://assets.aceternity.com; 
     font-src 'self' data:;
