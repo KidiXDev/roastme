@@ -4,11 +4,18 @@ import React from 'react';
 import { FireIcon, ROAST_COLORS } from '../constants';
 import { useRoast } from '../hooks/use-roast';
 import { useRoastStore } from '../store/roast-store';
-import { RoastLevel } from '../types';
+import { Language, RoastLevel } from '../types';
 
 const RoastForm: React.FC = () => {
-  const { currentLevel, setCurrentLevel, isLoading, url, setUrl, language } =
-    useRoastStore();
+  const {
+    currentLevel,
+    setCurrentLevel,
+    isLoading,
+    url,
+    setUrl,
+    language,
+    setLanguage
+  } = useRoastStore();
 
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
@@ -16,6 +23,7 @@ const RoastForm: React.FC = () => {
   }, []);
 
   const displayLevel = mounted ? currentLevel : RoastLevel.NORMAL;
+  const displayLanguage = mounted ? language : Language.EN;
   const { mutate: roast } = useRoast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -81,6 +89,27 @@ const RoastForm: React.FC = () => {
 
       {/* Staggered Vertical Level Selectors */}
       <div className="md:col-span-5 space-y-4">
+        <div className="flex items-center justify-between mb-6 pb-2 border-b border-white/5">
+          <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-500">
+            LANGUAGE //
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setLanguage(Language.EN)}
+              className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-3 border ${displayLanguage === Language.EN ? 'bg-white text-black border-white' : 'text-zinc-500 border-white/5 hover:border-white/20 hover:text-zinc-300'}`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage(Language.ID)}
+              className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-3 border ${displayLanguage === Language.ID ? 'bg-white text-black border-white' : 'text-zinc-500 border-white/5 hover:border-white/20 hover:text-zinc-300'}`}
+            >
+              ID
+            </button>
+          </div>
+        </div>
         <p className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-500 mb-4">
           HOW DEEP IS THE BURN?
         </p>

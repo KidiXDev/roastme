@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { ROAST_COLORS } from '../constants';
 import { useRoastStore } from '../store/roast-store';
-import { Language, RoastLevel } from '../types';
+import { RoastLevel } from '../types';
 import CustomCursor from './custom-cursor';
 
 interface LayoutProps {
@@ -11,7 +11,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { language, setLanguage, currentLevel } = useRoastStore();
+  const { currentLevel } = useRoastStore();
   const [mounted, setMounted] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
@@ -21,7 +21,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setMounted(true);
   }, []);
 
-  const displayLanguage = mounted ? language : Language.EN;
   const displayLevel = mounted ? currentLevel : RoastLevel.NORMAL;
   const activeColor = ROAST_COLORS[displayLevel].color;
 
@@ -161,23 +160,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {displayLevel} MODE ACTIVE
               </span>
             </span>
-          </div>
-
-          <div className="flex items-center gap-12">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setLanguage(Language.EN)}
-                className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-2 ${displayLanguage === Language.EN ? 'bg-white text-black' : 'text-gray-600 hover:text-white'}`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLanguage(Language.ID)}
-                className={`text-[11px] font-black tracking-[0.2em] transition-all py-1 px-2 ${displayLanguage === Language.ID ? 'bg-white text-black' : 'text-gray-600 hover:text-white'}`}
-              >
-                ID
-              </button>
-            </div>
           </div>
         </div>
       </header>
