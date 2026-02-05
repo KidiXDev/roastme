@@ -79,7 +79,6 @@ export async function POST(req: Request) {
 
     const { url, level, language } = await req.json();
 
-    // 1. Try direct scraping first
     const scrapedData = await scrapeUrl(url);
     const hasScrapedContext = !!scrapedData;
 
@@ -105,7 +104,20 @@ export async function POST(req: Request) {
       }
 
       const useWebSearch = process.env.USE_WEB_SEARCH === 'true';
-      const shouldSearch = useWebSearch && !hasScrapedContext;
+      const shouldSearch = useWebSearch;
+
+      if (
+        !useWebSearch &&
+        (!hasScrapedContext || scrapedData.paragraphs.length < 2)
+      ) {
+        return Response.json(
+          {
+            error:
+              'Unable to scrape website content and Web Search is disabled. Please try a different URL or enable Web Search.'
+          },
+          { status: 400 }
+        );
+      }
 
       const plugins = shouldSearch
         ? [
@@ -113,7 +125,8 @@ export async function POST(req: Request) {
               id: 'web' as const,
               engine: 'exa' as const,
               max_results: 3,
-              search_prompt: 'Find details about the website/profile at: ' + url
+              search_prompt:
+                'Find detailed professional and personal info about: ' + url
             }
           ]
         : [];
@@ -128,85 +141,139 @@ export async function POST(req: Request) {
       throw new Error('Failed to initialize AI model');
     }
 
+    // --- PROMPT CHAINING START ---
+
+    let analysisContext = '';
+
+    if (hasScrapedContext && scrapedData) {
+      const analysisSystemPrompt = `
+        You are an Expert Content Analyst & Professional Hater.
+        Your task is to analyze website content and extract specific material for a savage roast.
+        Focus on:
+        1. THE VIBE (Desperate, overly corporate, chaotic, etc.)
+        2. THE CRINGE (Buzzwords, clichés, pretentious claims)
+        3. THE TECH (Outdated stacks, over-engineering, cookie-cutter templates)
+        4. THE INCONSISTENCIES (Bio vs Reality)
+        
+        Do not write the roast yet. Just return the raw ammunition (analysis).
+      `;
+
+      const analysisUserContent = `
+        TARGET URL: ${url}
+        
+        RAW SCRAPED CONTENT:
+        Title: ${scrapedData.title}
+        Description: ${scrapedData.description}
+        Tech Stack: ${scrapedData.techStack?.join(', ') || 'Unknown'}
+        Social Links: ${scrapedData.socialLinks?.map((l) => l.platform + ': ' + l.url).join(', ')}
+        Headings: ${scrapedData.headings.join(' | ')}
+        Content Snippets: ${scrapedData.paragraphs.slice(0, 15).join('\n')}
+        Validation/Metadata: ${JSON.stringify(scrapedData.meta)}
+        JSON-LD Data: ${JSON.stringify(scrapedData.jsonLd || {})}
+        
+        Please provide the concise summary (max 200 words) as requested.
+      `;
+
+      try {
+        const { text: analysisResult } = await generateText({
+          model,
+          system: analysisSystemPrompt,
+          prompt: analysisUserContent
+        });
+        analysisContext = analysisResult;
+      } catch (err) {
+        console.warn('Analysis step failed, proceeding to direct roast', err);
+      }
+    }
+
     const levelDescriptions = {
-      [RoastLevel.SANTAI]: "gentle, playful, and friendly. It's a light poke.",
+      [RoastLevel.SANTAI]:
+        'gentle, playful, and friendly. Like a friend teasing another friend.',
       [RoastLevel.NORMAL]:
-        'witty, slightly savage, and cleverly critical. A fun roast for pros.',
+        'witty, slightly savage, and cleverly critical. Focus on professional competence and design choices.',
       [RoastLevel.PEDES]:
-        'sharp, brutal, and hilariously honest. Ruthless professional critique.'
+        'destructive, emotional damage, and hilariously honest. No mercy. Attack the ego.'
     };
 
     const languageInstruction =
       language === Language.ID
-        ? "Translate all your responses to Indonesian (Bahasa Indonesia). Use a mix of formal and slang ('bahasa gaul') tech terms like 'agak laen', 'minimalis tapi kosong', 'over-engineered', 'pencitraan', 'kang post quote bijak'. Sound like a witty senior dev."
-        : "Generate all responses in English. Use tech-sarcastic and witty language. Use modern dev tropes, design memes, and LinkedIn 'thought leader' cliches.";
+        ? "Translate all your responses to Indonesian (Bahasa Indonesia). Use a mix of formal and slang ('bahasa gaul') tech terms like 'agak laen', 'minimalis tapi kosong', 'sok iye', 'kaum mendang-mending', 'tutorial hell victim'. Sound like a toxic senior dev from Jakarta Selatan."
+        : 'Generate all responses in English. Use tech-sarcastic and witty language. Use modern dev tropes, design memes, and Silicon Valley/Indie Hacker clichés.';
 
-    const prompt = `
-      ROAST MISSION:
-      Analyze the profile/site at: ${url}
-      Your goal is to roast the PERSON or the PRODUCT behind the URL. 
-      Focus on their career choices, design aesthetics, "creative" descriptions, and overall vibe.
+    const roastSystemPrompt = `
+      You are "ROASTMASTER-3000", a legendary roasting AI agent.
       
-      STRICT DATA INTEGRITY PROTOCOL:
-      - USE WEB SEARCH to find specific details about the URL content if it's not obvious.
-      - DO NOT focus on technical metadata like "og:tags" or "meta keywords" unless they are exceptionally cringe.
-      - DATA HARVESTING: Focus on Bio snippets, Job titles, Repository names, Project descriptions, and the 'Voice' of the content.
-      - If the URL is for GitHub, roast their contribution graph, pinning choices, or overly ambitious project names.
-      - If the URL is for LinkedIn, roast the "LinkedIn influencer" energy, generic buzzwords, or the "Open to Work" desperation/confidence.
-      - If the URL is for a Portfolio, roast the predictable tech stack (Next.js + Tailwind + Framer Motion triplet) and the generic "Passion for UX" lines.
+      YOUR MISSION:
+      Create a roasting profile for the provided user/website.
+      Your goal is to be funny, accurate, and insightful. 
+      Avoid generic insults like "your site is ugly". match the specific details found in the analysis.
       
-      CONSTRAINTS:
-      - Roast Level: ${level} (${levelDescriptions[level as RoastLevel]})
-      - Language: ${languageInstruction}
-      - Style: One or two high-impact, witty paragraphs. Focus on the 'Vibe' and 'Persona'.
-      - NO HALLUCINATIONS: If you absolutely cannot find any specific info about the URL, admit it in the roast.
+      GUIDELINES:
+      - MODE: ${level} (${levelDescriptions[level as RoastLevel]})
+      - LANGUAGE: ${languageInstruction}
+      - If it's a PORTFOLIO: Roast the stack, the "About Me" clichés, and the lack of real projects.
+      - If it's a GITHUB: Roast the commit history, the forked repos, and the readme badges.
+      - If it's a LINKEDIN: Roast the job titles, the "helping companies scale" nonsense.
+      - If it's a SAAS: Roast the pricing model, the "AI-powered" claim, and the generic landing page copy.
 
-      SCRAPED CONTEXT (Use this PRIORITY if available):
-      ${
-        scrapedData
-          ? `
-        Title: ${scrapedData.title}
-        Description: ${scrapedData.description}
-        Tech Stack: ${scrapedData.techStack?.join(', ') || 'Unknown'}
-        Main Headings: ${scrapedData.headings.join(', ')}
-        Content Snippets: ${scrapedData.paragraphs.join('\n')}
-        Links & Navigation: ${scrapedData.links.map((l) => l.text + ' (' + l.href + ')').join(', ')}
-        Technical Metadata (Secondary): ${JSON.stringify(scrapedData.meta)}
-        `
-          : 'Direct scraping failed or returned empty. Rely on web search or general knowledge.'
-      }
-
-      RESPONSE FORMAT:
-      You EXCEPTIONAL GOAL is to return a VALID JSON string.
-      Do not include any conversational text, markdown code blocks, or explanations outside the JSON.
+      RESPONSE STRUCTURE (STRICT JSON):
+      You must return ONLY a JSON object. No markdown formatting outside the JSON string.
       
-      The JSON object must follow this schema:
       {
-        "summary": "A sharp 5-10 word summary/title",
-        "roastContent": "The full roast paragraph(s)",
-        "burnScore": number (between 0 and 100),
+        "summary": "A punchy, 5-10 word title defining their existence",
+        "roastContent": "The main roast. 2-3 paragraphs. rich in specific details. Use HTML formatting tags like <b>, <i>, <br> if needed for emphasis.",
+        "burnScore": number (0-100),
         "sources": [
-          { "title": "Source Title", "uri": "Source URL" }
+          { "title": "Source Name", "uri": "URL" } 
         ]
       }
     `;
 
+    const roastUserContent = `
+      TARGET: ${url}
+      
+      INPUT DATA:
+      ${
+        analysisContext
+          ? `
+      ### PRELIMINARY ANALYSIS REPORT:
+      ${analysisContext}
+      `
+          : `
+      ### WEB SEARCH / KNOWLEDGE:
+      (Use your internal knowledge and web search tools to analyze this URL)
+      `
+      }
+
+      ### SCRAPED TECHNICAL DETAILS:
+      ${
+        hasScrapedContext && scrapedData
+          ? `
+      - Title: ${scrapedData.title}
+      - Tech Stack: ${scrapedData.techStack?.join(', ')}
+      - Socials: ${scrapedData.socialLinks?.map((l) => l.platform).join(', ')}
+      `
+          : 'No direct scrape available. Rely heavily on web search.'
+      }
+      
+      Generate the JSON roast now.
+    `;
+
     const { text } = await generateText({
       model,
-      prompt
+      system: roastSystemPrompt,
+      prompt: roastUserContent
     });
 
     let jsonResponse;
     try {
-      // Clean up potential markdown code blocks
       const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
       jsonResponse = JSON.parse(cleanText);
     } catch (parseError) {
       console.error('Failed to parse JSON response:', text, parseError);
-      // Fallback if parsing fails - attempt to wrap text in a valid structure
       jsonResponse = {
         summary: 'Roast Generation Error',
-        roastContent: text, // Return the raw text as content so the user at least sees something
+        roastContent: text,
         burnScore: 0,
         sources: []
       };

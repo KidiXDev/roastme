@@ -7,8 +7,10 @@ export interface ScrapedContent {
   headings: string[];
   paragraphs: string[];
   links: { text: string; href: string }[];
+  socialLinks: { platform: string; url: string }[];
   meta: Record<string, string>;
   techStack: string[];
+  jsonLd?: Record<string, unknown>[];
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapedContent | null> {
@@ -80,17 +82,42 @@ export async function scrapeUrl(url: string): Promise<ScrapedContent | null> {
       headings: [],
       paragraphs: [],
       links: [],
+      socialLinks: [],
       meta: {},
-      techStack: [...new Set(techStack)] // remove duplicates
+      techStack: [...new Set(techStack)], // remove duplicates
+      jsonLd: []
     };
 
-    $('h1, h2, h3').each((_, el) => {
+    // Extract JSON-LD
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const json = JSON.parse($(el).html() || '{}');
+        if (json) {
+          if (Array.isArray(json)) {
+            content.jsonLd?.push(...json);
+          } else {
+            content.jsonLd?.push(json);
+          }
+        }
+      } catch (_e) {
+        // ignore invalid json
+      }
+    });
+
+    // Prioritize "main" content or "about" sections for paragraphs
+    const mainContent = $(
+      'main, article, #content, .content, [id*="about"], [class*="about"]'
+    );
+    const sensitiveContext = mainContent.length ? mainContent : $('body');
+
+    sensitiveContext.find('h1, h2, h3').each((_, el) => {
       const text = $(el).text().replace(/\s+/g, ' ').trim();
       if (text) content.headings.push(text);
     });
 
     // Extract paragraphs, list items, and spans (often used for skills/badges/descriptions)
-    $('p, li, span').each((_, el) => {
+    // Extract paragraphs, list items, and spans (often used for skills/badges/descriptions)
+    sensitiveContext.find('p, li, span').each((_, el) => {
       const text = $(el).text().replace(/\s+/g, ' ').trim();
       // Filter out short snippets or navigation items usually found in lists or UI elements
       if (text && text.length > 20 && text.length < 500) {
@@ -101,9 +128,26 @@ export async function scrapeUrl(url: string): Promise<ScrapedContent | null> {
     $('a').each((_, el) => {
       const text = $(el).text().replace(/\s+/g, ' ').trim();
       const href = $(el).attr('href');
+
+      if (!href) return;
+
+      // Check for social links
+      const lowerHref = href.toLowerCase();
+      if (lowerHref.includes('github.com'))
+        content.socialLinks.push({ platform: 'GitHub', url: href });
+      else if (lowerHref.includes('linkedin.com'))
+        content.socialLinks.push({ platform: 'LinkedIn', url: href });
+      else if (lowerHref.includes('twitter.com') || lowerHref.includes('x.com'))
+        content.socialLinks.push({ platform: 'Twitter', url: href });
+      else if (lowerHref.includes('instagram.com'))
+        content.socialLinks.push({ platform: 'Instagram', url: href });
+      else if (lowerHref.includes('dribbble.com'))
+        content.socialLinks.push({ platform: 'Dribbble', url: href });
+      else if (lowerHref.includes('behance.net'))
+        content.socialLinks.push({ platform: 'Behance', url: href });
+
       if (
         text &&
-        href &&
         !href.startsWith('#') &&
         !href.startsWith('javascript') &&
         !href.startsWith('mailto') &&
@@ -139,7 +183,7 @@ export async function scrapeUrl(url: string): Promise<ScrapedContent | null> {
     });
 
     // Limit the amount of content to avoid token limits, but take slightly more than before
-    content.paragraphs = content.paragraphs.slice(0, 20); // Increased from 10
+    content.paragraphs = content.paragraphs.slice(0, 30); // Increased from 10 to 20, now 30
     content.links = content.links.slice(0, 15); // Increased from 10
 
     // Quality check: ensure we actually got some meaningful content
